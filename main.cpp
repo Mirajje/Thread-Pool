@@ -1,17 +1,17 @@
 #include <iostream>
-#include <vector>
-#include <functional>
 
-#include "worker.h"
 #include "thread-pool.h"
 
-template <class R, class F, class... Args>
-std::function<R ()> wrap(F f, Args&&... args) {
-    return std::bind(f, std::forward<Args>(args)...);
-}
-
 int main() {
-    ThreadPool tp(2);
+    ThreadPool tp;
+    tp.ChangeWorkersAmount(5);
 
-    for(;;){}
+    std::atomic<long long> a = 0;
+    for (int i = 0; i < 5; ++i)
+        tp.AddTask([&a] {
+            for (long long i = 0; i < 1000000000; ++i)
+                ++a;
+        });
+
+    tp.FinishTasks();
 }

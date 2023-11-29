@@ -1,11 +1,32 @@
-#include "worker.h"
+#include <chrono>
+#include <thread>
 
-Worker::Worker(TsQueue<std::function<void ()>>& task_queue, std::atomic<size_t>& workers_amount, 
-        std::atomic<size_t>& expected_workers_amount, int index) 
-    : task_queue(task_queue), workers_amount(workers_amount), expected_workers_amount(expected_workers_amount), index(index) {}
+#include "thread-pool.h"
 
-void Worker::Work() {
+ThreadPool::Worker::Worker(ThreadPool& tp) 
+    : tp(tp) {}
+
+void ThreadPool::Worker::Work() {
+    using namespace std::chrono_literals;
+
     for (;;) {
-        std::cout << index << "\n";
+        if (--tp.workers_amount >= tp.expected_workers_amount) {
+            --tp.idle_workers_amount;
+            return;
+        }
+        else {
+            ++tp.workers_amount;
+        }
+
+        auto result = tp.task_queue.try_pop_front();
+
+        if (!result) {
+            std::this_thread::sleep_for(200ms);
+            continue;
+        }
+
+        --tp.idle_workers_amount;
+        std::invoke(result.value());
+        ++tp.idle_workers_amount;
     }
 }

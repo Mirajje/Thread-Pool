@@ -1,14 +1,28 @@
 #include <thread>
 
 #include "thread-pool.h"
-#include "worker.h"
 
-ThreadPool::ThreadPool(size_t amount) 
-    : expected_workers_amount(amount), workers_amount(0) {
-    for (size_t i = 0; i < expected_workers_amount; ++i) {
+ThreadPool::ThreadPool() = default;
+
+void ThreadPool::ChangeWorkersAmount(size_t new_amount) {
+    expected_workers_amount = new_amount;
+    for (size_t i = workers_amount; i < new_amount; ++i) {
+        ++idle_workers_amount;
         ++workers_amount;
-        Worker worker(task_queue, workers_amount, expected_workers_amount, i);
-        std::thread thrd(&Worker::Work, worker);
+        Worker worker(*this);
+        std::thread thrd(&Worker::Work, std::move(worker));
         thrd.detach();
     }
+}
+
+void ThreadPool::FinishTasks() {
+    while (!task_queue.empty()) {}
+    while (idle_workers_amount < expected_workers_amount) {}
+}
+
+ThreadPool::~ThreadPool() {
+    FinishTasks();
+    
+    expected_workers_amount = 0;
+    while (idle_workers_amount) {}
 }
