@@ -9,7 +9,10 @@ ThreadPool::Worker::Worker(ThreadPool& tp)
 void ThreadPool::Worker::Work() {
     for (;;) {
         if (--tp.workers_amount >= tp.expected_workers_amount) {
-            --tp.idle_workers_amount;
+            {
+                std::lock_guard<std::mutex> lg(tp.set_mutex);
+                tp.worker_ids.erase(std::this_thread::get_id());
+            }
             return;
         } else {
             ++tp.workers_amount;
@@ -26,8 +29,6 @@ void ThreadPool::Worker::Work() {
             tp.task_queue.pop();
         }
         
-        --tp.idle_workers_amount;
         task();
-        ++tp.idle_workers_amount;
     }
 }

@@ -10,12 +10,35 @@ void ThreadPool::ChangeWorkersAmount(size_t new_amount) {
     size_t cur_amount = expected_workers_amount;
     expected_workers_amount = new_amount;
     for (size_t i = cur_amount; i < new_amount; ++i) {
-        ++idle_workers_amount;
-        ++workers_amount;
-        Worker worker(*this);
-        std::thread thrd(&Worker::Work, std::move(worker));
-        thrd.detach();
+        AddWorker();
     }
+}
+
+void ThreadPool::AddWorkers(size_t amount) {
+    std::lock_guard lg(pool_mutex);
+    expected_workers_amount += amount;
+    for (size_t i = 0; i < amount; ++i)
+        AddWorker();
+}
+
+void ThreadPool::KillWorkers(size_t amount) {
+    std::lock_guard lg(pool_mutex);
+    expected_workers_amount -= amount;
+}
+
+void ThreadPool::AddWorker() {
+    ++workers_amount;
+    Worker worker(*this);
+    std::thread thrd(&Worker::Work, std::move(worker));
+    {
+        std::lock_guard<std::mutex> lg(set_mutex);
+        worker_ids.insert(thrd.get_id());
+    }
+    thrd.detach();
+}
+
+bool ThreadPool::IsInPool(std::thread::id id) {
+    return worker_ids.count(id);
 }
 
 ThreadPool::~ThreadPool() {
@@ -23,6 +46,6 @@ ThreadPool::~ThreadPool() {
     
     cv.notify_all();
     while (!task_queue.empty()) {}
-    expected_workers_amount = 0;
-    while (idle_workers_amount != 0 && workers_amount != 0) {}
+    ChangeWorkersAmount(0);
+    while (!worker_ids.empty()) {}
 }
