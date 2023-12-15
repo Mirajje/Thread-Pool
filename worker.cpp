@@ -7,26 +7,27 @@ ThreadPool::Worker::Worker(ThreadPool& tp)
     : tp(tp) {}
 
 void ThreadPool::Worker::Work() {
-    using namespace std::chrono_literals;
-
     for (;;) {
         if (--tp.workers_amount >= tp.expected_workers_amount) {
             --tp.idle_workers_amount;
             return;
-        }
-        else {
+        } else {
             ++tp.workers_amount;
         }
 
-        auto result = tp.task_queue.try_pop_front();
-
-        if (!result) {
-            std::this_thread::sleep_for(200ms);
-            continue;
+        std::function<void()> task;
+        {
+            std::unique_lock lock(tp.queue_mutex);
+            tp.cv.wait(lock, [this]{ return tp.stop || !tp.task_queue.empty();});
+            if (tp.stop && tp.task_queue.empty())
+                continue;
+            
+            task = std::move(tp.task_queue.front());
+            tp.task_queue.pop();
         }
-
+        
         --tp.idle_workers_amount;
-        std::invoke(result.value());
+        task();
         ++tp.idle_workers_amount;
     }
 }
