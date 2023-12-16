@@ -45,16 +45,5 @@ std::unique_ptr<std::optional<std::any>> Future<T>::Get() {
     return std::make_unique<std::optional<std::any>>(future->get());
 }
 
-/// Can't specialize method since it must be defined in cpp file and thus we get compile error when using void()
 template <>
-class Future<void> : public FutureBase {
-public:
-    Future(const std::shared_ptr<std::future<void>>& future);
-
-    void Wait() override;
-    bool Valid() override;
-    std::unique_ptr<std::optional<std::any>> Get() override;
-
-private:
-    std::shared_ptr<std::future<void>> future;
-};
+std::unique_ptr<std::optional<std::any>> Future<void>::Get();
