@@ -10,22 +10,16 @@
 
 class Data {
 public:
-    std::vector<std::unique_ptr<std::any>> Get();
-    std::optional<std::vector<std::unique_ptr<std::any>>> TryGet();
+    std::vector<std::unique_ptr<std::optional<std::any>>> Get();
+    std::optional<std::vector<std::unique_ptr<std::optional<std::any>>>> TryGet();
 
 private:
     Data(ThreadPool&);
 
-    template <class T>
-    void Add(const std::shared_ptr<std::future<T>>&);
+    void Add(const std::shared_ptr<FutureBase>&);
 
     ThreadPool& tp;
     std::vector<std::shared_ptr<FutureBase>> futures;
 
     friend class ThreadPool;
 };
-
-template <class T>
-void Data::Add(const std::shared_ptr<std::future<T>>& future) {
-    futures.emplace_back(std::make_shared<Future<T>>(future));
-}

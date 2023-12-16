@@ -1,6 +1,7 @@
 #include <thread>
 
 #include "thread-pool.hpp"
+#include "func.hpp"
 
 ThreadPool::ThreadPool() = default;
 
@@ -39,6 +40,21 @@ void ThreadPool::AddWorker() {
 
 bool ThreadPool::IsInPool(std::thread::id id) {
     return worker_ids.count(id);
+}
+
+Data ThreadPool::AddTasks(std::vector<Func>&& functions) {
+    if (stop)
+        throw std::runtime_error("Adding task to a stopped thread pool");
+
+    Data data(*this);
+    for (auto& func : functions)
+    {
+        std::unique_lock lock(queue_mutex);
+        task_queue.push(std::move(func.task));
+        cv.notify_one();
+        data.Add(func.future);
+    }
+    return data;
 }
 
 ThreadPool::~ThreadPool() {

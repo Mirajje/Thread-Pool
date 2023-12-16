@@ -2,13 +2,15 @@
 
 #include <future>
 #include <any>
+#include <optional>
+#include <iostream>
 
 class FutureBase {
 public:
     virtual void Wait() = 0;
     virtual bool Valid() = 0;
-    virtual std::unique_ptr<std::any> Get() = 0;
-    virtual ~FutureBase() = 0;
+    virtual inline std::unique_ptr<std::optional<std::any>> Get() = 0;
+    virtual ~FutureBase() = default;
 };
 
 template <class T>
@@ -18,7 +20,7 @@ public:
 
     void Wait() override;
     bool Valid() override;
-    std::unique_ptr<std::any> Get() override;
+    inline std::unique_ptr<std::optional<std::any>> Get() override;
 
 private:
     std::shared_ptr<std::future<T>> future;
@@ -39,6 +41,20 @@ bool Future<T>::Valid() {
 }
 
 template <class T>
-std::unique_ptr<std::any> Future<T>::Get() {
-    return std::make_unique<std::any>(future->get());
+std::unique_ptr<std::optional<std::any>> Future<T>::Get() {
+    return std::make_unique<std::optional<std::any>>(future->get());
 }
+
+/// Can't specialize method since it must be defined in cpp file and thus we get compile error when using void()
+template <>
+class Future<void> : public FutureBase {
+public:
+    Future(const std::shared_ptr<std::future<void>>& future);
+
+    void Wait() override;
+    bool Valid() override;
+    std::unique_ptr<std::optional<std::any>> Get() override;
+
+private:
+    std::shared_ptr<std::future<void>> future;
+};
