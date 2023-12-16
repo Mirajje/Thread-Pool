@@ -1,6 +1,6 @@
 #include <thread>
 
-#include "thread-pool.h"
+#include "thread-pool.hpp"
 
 ThreadPool::ThreadPool() = default;
 

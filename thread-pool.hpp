@@ -1,5 +1,8 @@
 #pragma once
 
+#include "func.hpp"
+#include "data.hpp"
+
 #include <functional>
 #include <atomic>
 #include <memory>
@@ -79,3 +82,5 @@ auto ThreadPool::AddTask(F&& f, Args&&... args)
     }
     return future;
 }
+
+

@@ -1,27 +1,31 @@
 #pragma once
 
 #include "future.hpp"
-#include "thread-pool.h"
+#include "thread-pool.hpp"
 
 #include <any>
 #include <vector>
 #include <future>
+#include <optional>
 
-class Futures {
+class Data {
 public:
-    Futures(ThreadPool&);
+    std::vector<std::unique_ptr<std::any>> Get();
+    std::optional<std::vector<std::unique_ptr<std::any>>> TryGet();
+
+private:
+    Data(ThreadPool&);
 
     template <class T>
     void Add(const std::shared_ptr<std::future<T>>&);
 
-    void Wait();
-
-private:
     ThreadPool& tp;
     std::vector<std::shared_ptr<FutureBase>> futures;
+
+    friend class ThreadPool;
 };
 
 template <class T>
-void Futures::Add(const std::shared_ptr<std::future<T>>& future) {
+void Data::Add(const std::shared_ptr<std::future<T>>& future) {
     futures.emplace_back(std::make_shared<Future<T>>(future));
 }

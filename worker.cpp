@@ -1,7 +1,7 @@
 #include <chrono>
 #include <thread>
 
-#include "thread-pool.h"
+#include "thread-pool.hpp"
 
 ThreadPool::Worker::Worker(ThreadPool& tp) 
     : tp(tp) {}
