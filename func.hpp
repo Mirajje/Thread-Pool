@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <future>
 #include <functional>
 #include "future.hpp"
@@ -21,7 +20,7 @@ private:
 
 template <class F, class... Args>
 Func::Func(F&& f, Args&&... args) {
-    using return_type = std::invoke_result<F, Args...>::type;
+    using return_type = typename std::invoke_result<F, Args...>::type;
 
     auto p_task = std::make_shared<std::packaged_task<return_type()>>(
         std::bind(std::forward<F>(f), std::forward<Args>(args)...));

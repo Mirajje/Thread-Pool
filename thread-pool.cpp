@@ -64,4 +64,5 @@ ThreadPool::~ThreadPool() {
     while (!task_queue.empty()) {}
     ChangeWorkersAmount(0);
     while (!worker_ids.empty()) {}
+    std::lock_guard<std::mutex> lg(set_mutex); // making sure mutex was released
 }
