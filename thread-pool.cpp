@@ -39,6 +39,7 @@ void ThreadPool::AddWorker() {
 }
 
 bool ThreadPool::IsInPool(std::thread::id id) {
+    std::lock_guard lg(set_mutex);
     return worker_ids.count(id);
 }
 
